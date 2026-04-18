@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Login con Google (Popup)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- SDK Google -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #6a11cb, #2575fc);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        color: white;
+      }
+
+      .card {
+        background: white;
+        color: #333;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        width: 320px;
+      }
+
+      h2 {
+        margin-bottom: 10px;
+      }
+
+      #user {
+        margin-top: 20px;
+      }
+
+      img {
+        border-radius: 50%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Iniciar sesión</h2>
+      <p>Usa tu cuenta de Google</p>
+
+      <!-- Configuración automática -->
+      <div
+        id="g_id_onload"
+        data-client_id="207256185739-kq1gne78c00m52e6sf693d3io5pmkf34.apps.googleusercontent.com"
+        data-callback="handleCredentialResponse"
+        data-auto_prompt="false"
+      ></div>
+
+      <!-- Botón Google -->
+      <div
+        class="g_id_signin"
+        data-type="standard"
+        data-size="large"
+        data-theme="outline"
+        data-text="continue_with"
+        data-shape="rectangular"
+        data-logo_alignment="left"
+      ></div>
+
+      <!-- Resultado -->
+      <div id="user" style="display: none">
+        <img id="avatar" width="80" />
+        <h3 id="name"></h3>
+        <p id="email"></p>
+      </div>
+    </div>
+
+    <script>
+      // 🔄 Restaurar sesión al cargar
+      window.addEventListener("DOMContentLoaded", () => {
+        const savedUser = localStorage.getItem("user");
+
+        if (savedUser) {
+          const user = JSON.parse(savedUser);
+          renderUser(user);
+        }
+      });
+
+      async function handleCredentialResponse(response) {
+        try {
+          const res = await fetch("/auth/google", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              credential: response.credential,
+            }),
+          });
+
+          const user = await res.json();
+
+          // 💾 Guardar en localStorage
+          localStorage.setItem("user", JSON.stringify(user));
+
+          renderUser(user);
+        } catch (err) {
+          console.error("Error login:", err);
+        }
+      }
+
+      // 🎨 Renderizar usuario
+      function renderUser(user) {
+        document.getElementById("user").style.display = "block";
+        document.getElementById("name").textContent = user.name;
+        document.getElementById("email").textContent = user.email;
+        document.getElementById("avatar").src = user.picture;
+      }
+
+      // 🚪 Logout
+      function logout() {
+        localStorage.removeItem("user");
+        location.reload();
+      }
+
+      google.accounts.id.prompt((notification) => {
+        console.log("ONE TAP STATUS:", notification);
+
+        if (notification.isNotDisplayed()) {
+          console.log("No se mostró");
+        }
+
+        if (notification.isSkippedMoment()) {
+          console.log("Google lo bloqueó (cooldown)");
+        }
+
+        if (notification.isDismissedMoment()) {
+          console.log("El usuario lo cerró");
+        }
+      });
+    </script>
+
+    <button onclick="logout()" style="margin-top: 10px">Cerrar sesión</button>
+  </body>
+</html>

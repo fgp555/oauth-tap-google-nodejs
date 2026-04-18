@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Login con Google</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        height: 100vh;
+        justify-content: center;
+        align-items: center;
+        background: #f5f5f5;
+      }
+
+      .card {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+
+      button {
+        background: #4285f4;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      button:hover {
+        background: #357ae8;
+      }
+
+      img {
+        width: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Iniciar sesión</h2>
+      <p>Usa tu cuenta de Google</p>
+
+      <button onclick="loginGoogle()">
+        <img src="https://developers.google.com/identity/images/g-logo.png" />
+        Continuar con Google
+      </button>
+    </div>
+
+    <script>
+      function loginGoogle() {
+        window.location.href = "/auth/google";
+      }
+    </script>
+  </body>
+</html>
