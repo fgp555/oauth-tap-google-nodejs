@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Login con Google</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+  <h2>Login con Google</h2>
+
+  <div id="g_id_onload"
+       data-client_id="141961932626-3o5089pbjc7stqj2q13id15npf7lnukj.apps.googleusercontent.com"
+       data-callback="handleCredentialResponse">
+  </div>
+
+  <div class="g_id_signin"></div>
+
+  <script>
+    async function handleCredentialResponse(response) {
+      console.log("Token:", response.credential);
+
+      // Enviar token al backend
+      const res = await fetch("/auth/google", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          credential: response.credential
+        })
+      });
+
+      const data = await res.json();
+      console.log("Usuario:", data);
+    }
+  </script>
+
+</body>
+</html>

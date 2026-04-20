@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Google Login - Frontend Only</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <style>
+      body {
+        font-family: Arial;
+        text-align: center;
+        margin-top: 50px;
+      }
+      img {
+        border-radius: 50%;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Login con Google</h2>
+
+    <!-- Botón Google -->
+    <!-- <div id="g_id_onload" data-client_id="TU_CLIENT_ID_AQUI" data-callback="handleCredentialResponse"></div> -->
+    <div
+      id="g_id_onload"
+      data-client_id="141961932626-3o5089pbjc7stqj2q13id15npf7lnukj.apps.googleusercontent.com"
+      data-callback="handleCredentialResponse"
+    ></div>
+
+    <div class="g_id_signin"></div>
+
+    <hr />
+
+    <div id="user"></div>
+
+    <script>
+      function parseJwt(token) {
+        const base64Url = token.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split("")
+            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+            .join(""),
+        );
+
+        return JSON.parse(jsonPayload);
+      }
+
+      function handleCredentialResponse(response) {
+        const data = parseJwt(response.credential);
+
+        console.log("Usuario:", data);
+
+        document.getElementById("user").innerHTML = `
+        <h3>${data.name}</h3>
+        <p>${data.email}</p>
+        <img src="${data.picture}" width="100"/>
+      `;
+      }
+    </script>
+  </body>
+</html>

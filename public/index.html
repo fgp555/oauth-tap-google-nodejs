@@ -1,136 +1,18 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Google One Tap + Backend</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
-
-    <style>
-      body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-      }
-
-      #user {
-        display: none;
-        text-align: center;
-      }
-
-      img {
-        border-radius: 50%;
-      }
-
-      h2 {
-        text-align: center;
-      }
-    </style>
+    <title>index.html</title>
   </head>
-
   <body>
-    <main class="container">
-      <h2>Login con Google</h2>
-
-      <!-- 🔘 Botón fallback -->
-      <div id="googleBtn"></div>
-
-      <!-- 👤 Usuario -->
-      <div id="user">
-        <img id="avatar" width="80" />
-        <h3 id="name"></h3>
-        <p id="email"></p>
-        <button onclick="logout()">Cerrar sesión</button>
-      </div>
+    <main>
+      <section>
+        <a href="00-serverless.html" ><button>00-serverless.html</button></a>
+        <a href="01-one-tap-basic.html"><button>01-one-tap-basic.html</button></a>
+        <a href="01-one-tap-dom.html"><button>01-one-tap-dom.html</button></a>
+      </section>
     </main>
-
-    <script>
-      const CLIENT_ID = "207256185739-kq1gne78c00m52e6sf693d3io5pmkf34.apps.googleusercontent.com";
-
-      function waitForGoogle(cb) {
-        const i = setInterval(() => {
-          if (window.google && google.accounts && google.accounts.id) {
-            clearInterval(i);
-            cb();
-          }
-        }, 100);
-      }
-
-      window.onload = () => {
-        const savedUser = localStorage.getItem("user");
-
-        waitForGoogle(() => {
-          // 🔧 inicializar siempre
-          google.accounts.id.initialize({
-            client_id: CLIENT_ID,
-            callback: handleCredentialResponse,
-          });
-
-          // 🔘 botón SIEMPRE visible
-          google.accounts.id.renderButton(document.getElementById("googleBtn"), {
-            theme: "outline",
-            size: "large",
-            text: "continue_with",
-          });
-
-          if (savedUser) {
-            const user = JSON.parse(savedUser);
-            renderUser(user);
-
-            // ❌ evitar One Tap
-            google.accounts.id.cancel();
-          } else {
-            // ⚡ One Tap
-            google.accounts.id.prompt();
-          }
-        });
-      };
-
-      // 🔑 AQUÍ ESTÁ EL CAMBIO IMPORTANTE
-      async function handleCredentialResponse(response) {
-        try {
-          const res = await fetch("/auth/google", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              credential: response.credential,
-            }),
-          });
-
-          const user = await res.json();
-
-          // 💾 guardar sesión REAL (desde backend)
-          localStorage.setItem("user", JSON.stringify(user));
-
-          renderUser(user);
-        } catch (err) {
-          console.error("Error login:", err);
-        }
-      }
-
-      function renderUser(user) {
-        document.getElementById("user").style.display = "block";
-        document.getElementById("googleBtn").style.display = "none";
-
-        document.getElementById("name").textContent = user.name;
-        document.getElementById("email").textContent = user.email;
-        document.getElementById("avatar").src = user.picture;
-      }
-
-      function logout() {
-        localStorage.removeItem("user");
-
-        if (window.google) {
-          google.accounts.id.disableAutoSelect();
-        }
-
-        location.reload();
-      }
-    </script>
   </body>
 </html>

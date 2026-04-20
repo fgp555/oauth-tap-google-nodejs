@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Google One Tap + localStorage</title>
+    <title>Google One Tap + Backend</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -10,12 +10,10 @@
 
     <style>
       body {
-        font-family: Arial;
         display: flex;
         justify-content: center;
         align-items: center;
         height: 100vh;
-        margin: 0;
       }
 
       #user {
@@ -27,28 +25,30 @@
         border-radius: 50%;
       }
 
-      button {
-        margin-top: 10px;
-        padding: 6px 10px;
-        cursor: pointer;
+      h2 {
+        text-align: center;
       }
     </style>
   </head>
 
   <body>
-    <div>
+    <main class="container">
       <h2>Login con Google</h2>
 
+      <!-- 🔘 Botón fallback -->
+      <div id="googleBtn"></div>
+
+      <!-- 👤 Usuario -->
       <div id="user">
         <img id="avatar" width="80" />
         <h3 id="name"></h3>
         <p id="email"></p>
         <button onclick="logout()">Cerrar sesión</button>
       </div>
-    </div>
+    </main>
 
     <script>
-      const CLIENT_ID = "207256185739-kq1gne78c00m52e6sf693d3io5pmkf34.apps.googleusercontent.com";
+      const CLIENT_ID = "141961932626-3o5089pbjc7stqj2q13id15npf7lnukj.apps.googleusercontent.com";
 
       function waitForGoogle(cb) {
         const i = setInterval(() => {
@@ -60,43 +60,63 @@
       }
 
       window.onload = () => {
-        // 🔄 restaurar sesión
         const savedUser = localStorage.getItem("user");
 
-        if (savedUser) {
-          const user = JSON.parse(savedUser);
-          renderUser(user);
-          return; // ❌ no mostrar One Tap
-        }
-
-        // 🧠 iniciar Google
         waitForGoogle(() => {
+          // 🔧 inicializar siempre
           google.accounts.id.initialize({
             client_id: CLIENT_ID,
             callback: handleCredentialResponse,
           });
 
-          google.accounts.id.prompt();
+          // 🔘 botón SIEMPRE visible
+          google.accounts.id.renderButton(document.getElementById("googleBtn"), {
+            theme: "outline",
+            size: "large",
+            text: "continue_with",
+          });
+
+          if (savedUser) {
+            const user = JSON.parse(savedUser);
+            renderUser(user);
+
+            // ❌ evitar One Tap
+            google.accounts.id.cancel();
+          } else {
+            // ⚡ One Tap
+            google.accounts.id.prompt();
+          }
         });
       };
 
-      function handleCredentialResponse(response) {
-        const user = parseJwt(response.credential);
+      // 🔑 AQUÍ ESTÁ EL CAMBIO IMPORTANTE
+      async function handleCredentialResponse(response) {
+        try {
+          const res = await fetch("/auth/google", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              credential: response.credential,
+            }),
+          });
 
-        // 💾 guardar usuario
-        localStorage.setItem("user", JSON.stringify(user));
+          const user = await res.json();
 
-        renderUser(user);
-      }
+          // 💾 guardar sesión REAL (desde backend)
+          localStorage.setItem("user", JSON.stringify(user));
 
-      function parseJwt(token) {
-        const base64 = token.split(".")[1];
-        const json = atob(base64);
-        return JSON.parse(json);
+          renderUser(user);
+        } catch (err) {
+          console.error("Error login:", err);
+        }
       }
 
       function renderUser(user) {
         document.getElementById("user").style.display = "block";
+        document.getElementById("googleBtn").style.display = "none";
+
         document.getElementById("name").textContent = user.name;
         document.getElementById("email").textContent = user.email;
         document.getElementById("avatar").src = user.picture;
