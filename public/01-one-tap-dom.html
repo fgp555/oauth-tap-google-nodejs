@@ -1,10 +1,9 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>Google One Tap + Backend</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
 
@@ -33,28 +32,28 @@
 
   <body>
     <main class="container">
-      <h2>Login con Google</h2>
+      <h2>Login with Google</h2>
 
-      <!-- 🔘 Botón fallback -->
+      <!-- Fallback button -->
       <div id="googleBtn"></div>
 
-      <!-- 👤 Usuario -->
+      <!-- User info -->
       <div id="user">
         <img id="avatar" width="80" />
         <h3 id="name"></h3>
         <p id="email"></p>
-        <button onclick="logout()">Cerrar sesión</button>
+        <button onclick="logout()">Logout</button>
       </div>
     </main>
 
     <script>
       const CLIENT_ID = "141961932626-3o5089pbjc7stqj2q13id15npf7lnukj.apps.googleusercontent.com";
 
-      function waitForGoogle(cb) {
-        const i = setInterval(() => {
+      function waitForGoogle(callback) {
+        const interval = setInterval(() => {
           if (window.google && google.accounts && google.accounts.id) {
-            clearInterval(i);
-            cb();
+            clearInterval(interval);
+            callback();
           }
         }, 100);
       }
@@ -63,13 +62,13 @@
         const savedUser = localStorage.getItem("user");
 
         waitForGoogle(() => {
-          // 🔧 inicializar siempre
+          // Initialize Google
           google.accounts.id.initialize({
             client_id: CLIENT_ID,
             callback: handleCredentialResponse,
           });
 
-          // 🔘 botón SIEMPRE visible
+          // Always render button
           google.accounts.id.renderButton(document.getElementById("googleBtn"), {
             theme: "outline",
             size: "large",
@@ -80,16 +79,16 @@
             const user = JSON.parse(savedUser);
             renderUser(user);
 
-            // ❌ evitar One Tap
+            // Prevent One Tap if user already exists
             google.accounts.id.cancel();
           } else {
-            // ⚡ One Tap
+            // Show One Tap
             google.accounts.id.prompt();
           }
         });
       };
 
-      // 🔑 AQUÍ ESTÁ EL CAMBIO IMPORTANTE
+      // Handle login response
       async function handleCredentialResponse(response) {
         try {
           const res = await fetch("/auth/google", {
@@ -104,12 +103,12 @@
 
           const user = await res.json();
 
-          // 💾 guardar sesión REAL (desde backend)
+          // ⚠️ Not secure for production (demo only)
           localStorage.setItem("user", JSON.stringify(user));
 
           renderUser(user);
         } catch (err) {
-          console.error("Error login:", err);
+          console.error("Login error:", err);
         }
       }
 

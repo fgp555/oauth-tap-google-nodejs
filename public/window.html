@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Login con Google (Popup)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+  </head>
+  <body>
+    <div class="card">
+      <h2>Iniciar sesión</h2>
+
+      <div
+        id="g_id_onload"
+        data-client_id="141961932626-3o5089pbjc7stqj2q13id15npf7lnukj.apps.googleusercontent.com"
+        data-callback="handleCredentialResponse"
+        data-auto_prompt="false"
+      ></div>
+
+      <!-- Botón Google -->
+      <div
+        class="g_id_signin"
+        data-type="standard"
+        data-size="large"
+        data-theme="outline"
+        data-text="continue_with"
+        data-shape="rectangular"
+        data-logo_alignment="left"
+      ></div>
+
+      <pre id="out"></pre>
+    </div>
+
+    <script>
+      // 🔄 Restaurar sesión al cargar
+      window.addEventListener("DOMContentLoaded", () => {
+        const savedUser = localStorage.getItem("user");
+
+        if (savedUser) {
+          const user = JSON.parse(savedUser);
+          renderUser(user);
+        }
+      });
+
+      async function handleCredentialResponse(response) {
+        try {
+          const res = await fetch("/auth/google", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              credential: response.credential,
+            }),
+          });
+
+          const user = await res.json();
+
+          // 💾 Guardar en localStorage
+          localStorage.setItem("user", JSON.stringify(user));
+
+          renderUser(user);
+        } catch (err) {
+          console.error("Error login:", err);
+        }
+      }
+
+      // 🎨 Renderizar usuario
+      function renderUser(userData) {
+        document.querySelector("#out").textContent = JSON.stringify(userData, null, 2);
+      }
+
+      // 🚪 Logout
+      function logout() {
+        localStorage.removeItem("user");
+        location.reload();
+      }
+
+      google.accounts.id.prompt((notification) => {
+        console.log("ONE TAP STATUS:", notification);
+
+        if (notification.isNotDisplayed()) {
+          console.log("No se mostró");
+        }
+
+        if (notification.isSkippedMoment()) {
+          console.log("Google lo bloqueó (cooldown)");
+        }
+
+        if (notification.isDismissedMoment()) {
+          console.log("El usuario lo cerró");
+        }
+      });
+    </script>
+
+    <button onclick="logout()" style="margin-top: 10px">Cerrar sesión</button>
+  </body>
+</html>

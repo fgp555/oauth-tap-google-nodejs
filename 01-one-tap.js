@@ -14,11 +14,11 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.static("public"));
 
-// 🔐 Cliente de Google
-const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+// 🔐 Google OAuth client
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 /**
- * 🔑 Login con Google (popup)
+ * 🔑 Google Login (One Tap / Popup)
  */
 app.post("/auth/google", async (req, res) => {
   const { credential } = req.body;
@@ -28,15 +28,15 @@ app.post("/auth/google", async (req, res) => {
   }
 
   try {
-    // ✅ Verificar token JWT
-    const ticket = await client.verifyIdToken({
+    // ✅ Verify Google ID token
+    const ticket = await googleClient.verifyIdToken({
       idToken: credential,
       audience: GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
 
-    // 📦 Datos del usuario
+    // 📦 Build user object
     const user = {
       id: payload.sub,
       name: payload.name,
@@ -46,15 +46,15 @@ app.post("/auth/google", async (req, res) => {
       roles: ["student"],
     };
 
-    // 👉 Aquí podrías guardar en DB o sesión
+    // 👉 Here you could persist the user or create a session
 
-    res.json(user);
-  } catch (err) {
-    console.error(err);
-    res.status(401).json({ error: "Invalid token" });
+    return res.json(user);
+  } catch (error) {
+    console.error("Token verification failed:", error);
+    return res.status(401).json({ error: "Invalid token" });
   }
 });
 
 app.listen(3000, () => {
-  console.log(`Servidor en http://localhost:3000`);
+  console.log("Server running at http://localhost:3000");
 });

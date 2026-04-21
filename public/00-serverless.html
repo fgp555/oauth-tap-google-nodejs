@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>Google Login - Frontend Only</title>
@@ -11,53 +11,60 @@
         text-align: center;
         margin-top: 50px;
       }
+
       img {
         border-radius: 50%;
         margin-top: 10px;
       }
     </style>
   </head>
-  <body>
-    <h2>Login con Google</h2>
 
-    <!-- Botón Google -->
-    <!-- <div id="g_id_onload" data-client_id="TU_CLIENT_ID_AQUI" data-callback="handleCredentialResponse"></div> -->
+  <body>
+    <h2>Login with Google</h2>
+
+    <!-- Google Sign-In initialization -->
     <div
       id="g_id_onload"
       data-client_id="141961932626-3o5089pbjc7stqj2q13id15npf7lnukj.apps.googleusercontent.com"
       data-callback="handleCredentialResponse"
+      data-auto_prompt="true"
     ></div>
 
+    <!-- Google button -->
     <div class="g_id_signin"></div>
 
     <hr />
 
+    <!-- User info container -->
     <div id="user"></div>
 
     <script>
+      // Decode JWT token
       function parseJwt(token) {
         const base64Url = token.split(".")[1];
         const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+
         const jsonPayload = decodeURIComponent(
           atob(base64)
             .split("")
-            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+            .map((char) => "%" + ("00" + char.charCodeAt(0).toString(16)).slice(-2))
             .join(""),
         );
 
         return JSON.parse(jsonPayload);
       }
 
+      // Handle Google response
       function handleCredentialResponse(response) {
-        const data = parseJwt(response.credential);
+        const userData = parseJwt(response.credential);
 
-        console.log("Usuario:", data);
+        console.log("User:", userData);
 
         document.getElementById("user").innerHTML = `
-        <h3>${data.name}</h3>
-        <p>${data.email}</p>
-        <img src="${data.picture}" width="100"/>
-      `;
+          <h3>${userData.name}</h3>
+          <p>${userData.email}</p>
+          <img src="${userData.picture}" width="100"/>
+        `;
       }
     </script>
   </body>
