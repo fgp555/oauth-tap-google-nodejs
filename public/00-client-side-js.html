@@ -2,45 +2,21 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Google One Tap + Backend</title>
+    <title>Google One Tap - client-side</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
-
-    <style>
-      body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-      }
-
-      #user {
-        display: none;
-        text-align: center;
-      }
-
-      img {
-        border-radius: 50%;
-      }
-
-      h2 {
-        text-align: center;
-      }
-    </style>
   </head>
 
   <body>
     <main class="container">
-      <h2>Login with Google</h2>
       <div id="googleBtn"></div>
-      <pre id="out"></pre>
+      <pre id="out-pre"></pre>
       <button onclick="logout()">logout</button>
     </main>
 
     <script>
       const CLIENT_ID = "141961932626-3o5089pbjc7stqj2q13id15npf7lnukj.apps.googleusercontent.com";
-      // const CLIENT_ID = "207256185739-kq1gne78c00m52e6sf693d3io5pmkf34.apps.googleusercontent.com";
 
       function waitForGoogle(callback) {
         const interval = setInterval(() => {
@@ -72,6 +48,13 @@
         });
       }
 
+      function renderData(user) {
+        document.querySelector("#out-pre").textContent = JSON.stringify(user, null, 2);
+
+        // opcional: ocultar botón
+        document.getElementById("googleBtn").style.display = "none";
+      }
+
       window.onload = () => {
         const savedUser = localStorage.getItem("user");
 
@@ -79,16 +62,18 @@
           google.accounts.id.initialize({
             client_id: CLIENT_ID,
             callback: handleCredentialResponse,
+            auto_select: false, // evita login automático agresivo
           });
 
           renderGoogleButton();
 
           if (savedUser) {
-            console.log("savedUser if", savedUser);
+            const user = JSON.parse(savedUser);
+            renderData(user);
 
+            // 🔥 no mostrar One Tap si ya hay sesión
             google.accounts.id.cancel();
           } else {
-            console.log("savedUser else", savedUser);
             google.accounts.id.prompt();
           }
         });
@@ -111,8 +96,14 @@
       async function handleCredentialResponse(response) {
         try {
           const userData = parseJwt(response.credential);
-          console.log("userData", userData);
-          document.querySelector("#out").textContent = JSON.stringify(userData, null, 2);
+
+          // 💾 guardar usuario
+          localStorage.setItem("user", JSON.stringify(userData));
+
+          renderData(userData);
+
+          // 🚫 evitar que vuelva a mostrar One Tap
+          google.accounts.id.cancel();
         } catch (err) {
           console.error("Login error:", err);
         }
@@ -120,6 +111,10 @@
 
       function logout() {
         localStorage.removeItem("user");
+
+        // 🔥 esto evita auto login silencioso
+        google.accounts.id.disableAutoSelect();
+
         location.reload();
       }
     </script>

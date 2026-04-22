@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Success</title>
+    <style>
+      body {
+        font-family: Arial;
+        text-align: center;
+        margin-top: 50px;
+      }
+
+      img {
+        border-radius: 50%;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h2>Login successful</h2>
+
+    <p id="name"></p>
+    <p id="email"></p>
+    <img id="picture" width="100" />
+
+    <br /><br />
+    <a href="/"><button>Volver</button></a>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+
+      const name = params.get("name");
+      const email = params.get("email");
+      const picture = params.get("picture");
+
+      document.getElementById("name").textContent = name;
+      document.getElementById("email").textContent = email;
+      document.getElementById("picture").src = picture;
+    </script>
+  </body>
+</html>

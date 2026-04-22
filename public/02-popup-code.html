@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Google OAuth Popup</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- PicoCSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: #0f172a;
+      }
+
+      main {
+        text-align: center;
+      }
+
+      .google-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #111;
+        color: #fff;
+        border: 1px solid #333;
+        padding: 12px 18px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: 0.2s;
+      }
+
+      .google-btn:hover {
+        background: #222;
+      }
+
+      .user {
+        margin-top: 20px;
+      }
+
+      img {
+        border-radius: 50%;
+      }
+
+      pre {
+        text-align: left;
+        max-height: 200px;
+        overflow: auto;
+        background: #020617;
+        padding: 10px;
+        border-radius: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="container">
+      <h2>Login with Google</h2>
+
+      <!-- Botón personalizado -->
+      <button id="googleBtn" class="google-btn">
+        <img src="https://www.svgrepo.com/show/475656/google-color.svg" width="20" />
+        Continue with Google
+      </button>
+
+      <!-- Usuario -->
+      <div id="user" class="user" style="display: none">
+        <img id="avatar" width="80" />
+        <h4 id="name"></h4>
+        <p id="email"></p>
+        <pre></pre>
+        <button onclick="logout()">Logout</button>
+      </div>
+    </main>
+
+    <script>
+      const CLIENT_ID = "141961932626-3o5089pbjc7stqj2q13id15npf7lnukj.apps.googleusercontent.com";
+
+      let client;
+
+      function waitForGoogle(callback) {
+        const interval = setInterval(() => {
+          if (window.google && google.accounts && google.accounts.oauth2) {
+            clearInterval(interval);
+            callback();
+          }
+        }, 100);
+      }
+
+      function initGoogle() {
+        client = google.accounts.oauth2.initCodeClient({
+          client_id: CLIENT_ID,
+          scope: "openid email profile",
+          ux_mode: "popup", // 🔥 popup como tu imagen
+          callback: handleAuthCode,
+        });
+      }
+
+      document.getElementById("googleBtn").onclick = () => {
+        client.requestCode(); // 🔥 abre ventana Google
+      };
+
+      async function handleAuthCode(response) {
+        try {
+          const res = await fetch("/auth/google", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              code: response.code,
+            }),
+          });
+
+          const user = await res.json();
+
+          localStorage.setItem("user", JSON.stringify(user));
+
+          renderData(user);
+        } catch (err) {
+          console.error("Login error:", err);
+        }
+      }
+
+      function renderData(user) {
+        document.getElementById("user").style.display = "block";
+        document.getElementById("avatar").src = user.picture;
+        document.getElementById("name").textContent = user.name;
+        document.getElementById("email").textContent = user.email;
+
+        document.querySelector("pre").textContent = JSON.stringify(user, null, 2);
+      }
+
+      function logout() {
+        localStorage.removeItem("user");
+        location.reload();
+      }
+
+      window.onload = () => {
+        const savedUser = localStorage.getItem("user");
+
+        waitForGoogle(() => {
+          initGoogle();
+
+          if (savedUser) {
+            renderData(JSON.parse(savedUser));
+          }
+        });
+      };
+    </script>
+  </body>
+</html>

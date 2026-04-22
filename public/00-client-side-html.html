@@ -2,21 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Google Login - Frontend Only</title>
+    <title>Google Login - client-side</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
-    <style>
-      body {
-        font-family: Arial;
-        text-align: center;
-        margin-top: 50px;
-      }
-
-      img {
-        border-radius: 50%;
-        margin-top: 10px;
-      }
-    </style>
   </head>
 
   <body>
@@ -32,11 +20,21 @@
 
     <!-- Google button -->
     <div class="g_id_signin"></div>
+    <br />
+    <div
+      class="g_id_signin"
+      data-type="standard"
+      data-size="large"
+      data-theme="outline"
+      data-text="continue_with"
+      data-shape="rectangular"
+      data-logo_alignment="left"
+    ></div>
 
     <hr />
 
     <!-- User info container -->
-    <div id="user"></div>
+    <pre></pre>
 
     <script>
       // Decode JWT token
@@ -57,14 +55,7 @@
       // Handle Google response
       function handleCredentialResponse(response) {
         const userData = parseJwt(response.credential);
-
-        console.log("User:", userData);
-
-        document.getElementById("user").innerHTML = `
-          <h3>${userData.name}</h3>
-          <p>${userData.email}</p>
-          <img src="${userData.picture}" width="100"/>
-        `;
+        document.querySelector("pre").textContent = JSON.stringify(userData, null, 2);
       }
     </script>
   </body>
