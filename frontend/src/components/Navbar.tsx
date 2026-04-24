@@ -1,4 +1,6 @@
-import GoogleOneTap from "./GoogleOneTap";
+// import GoogleAuth from "./GoogleAuth";
+
+import GoogleAuth from "./GoogleAuth/GoogleAuth";
 
 export default function Navbar() {
   return (
@@ -26,7 +28,7 @@ export default function Navbar() {
 
         {/* 🔹 RIGHT (auth completamente encapsulado) */}
         <div className="flex items-center gap-3">
-          <GoogleOneTap />
+          <GoogleAuth />
         </div>
       </div>
     </header>
