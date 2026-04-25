@@ -1,95 +1,233 @@
 <!doctype html>
-<html>
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
-    <title>App</title>
-  </head>
-  <body>
-    <section>
-      <a href="00-client-side.html" target="_blank"><button>00-client-side</button></a>
-      <a href="01-one-tap-credential.html" target="_blank"><button>01-one-tap-credential</button></a>
-      <a href="02-popup-code.html" target="_blank"><button>02-popup-code</button></a>
-      <a href="/login" target="_blank"><button>03-callback</button></a>
-    </section>
+    <title>SSO Unified Test (Raw JSON)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <div id="app"></div>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+
+    <style>
+      body {
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+
+      main {
+        max-width: 600px;
+        margin: auto;
+        padding-top: 40px;
+      }
+
+      .card {
+        background: #111827;
+        padding: 20px;
+        border-radius: 12px;
+        margin-top: 20px;
+      }
+
+      pre {
+        background: #020617;
+        padding: 10px;
+        border-radius: 10px;
+        overflow: auto;
+      }
+
+      button {
+        margin-top: 8px;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+    </style>
+  </head>
+
+  <body>
+    <main>
+      <h2>🔐 SSO Unified Test (Raw JSON)</h2>
+
+      <!-- LOGIN -->
+      <div class="card">
+        <h3>Login</h3>
+
+        <div id="googleBtn"></div>
+
+        <div class="row">
+          <button onclick="popupLogin()">Popup OAuth</button>
+          <button onclick="legacyLogin()">Legacy Redirect</button>
+          <button onclick="logout()">Logout</button>
+        </div>
+      </div>
+
+      <!-- USER RAW -->
+      <div class="card hidden" id="userCard">
+        <h3>👤 User (raw)</h3>
+        <pre id="raw"></pre>
+
+        <div class="row">
+          <button onclick="getMe()">GET /auth/me</button>
+          <button onclick="getPrivate()">GET /api/private</button>
+        </div>
+      </div>
+
+      <hr />
+
+      <!-- CALLBACK -->
+      <div class="card">
+        <h3>🔐 Callback / Session</h3>
+        <button onclick="checkSession()">🔍 Validar sesión (/auth/me)</button>
+        <pre id="output">Esperando datos...</pre>
+      </div>
+
+      <section>
+        <a href="00-client-side.html"><button>00-client-side</button></a>
+        <a href="cookie-auth-sso.html"><button>cookie-auth-sso</button></a>
+      </section>
+    </main>
 
     <script>
-      // ==============================
-      // 🔐 LOGIN
-      // ==============================
-      async function login() {
-        const user = document.getElementById("user").value;
+      const API = "https://back.frankgp.com";
+      const CLIENT_ID = "141961932626-3o5089pbjc7stqj2q13id15npf7lnukj.apps.googleusercontent.com";
 
-        const res = await fetch("https://back.frankgp.com/api/login", {
+      let oauthClient;
+
+      function waitGoogle(cb) {
+        const i = setInterval(() => {
+          if (window.google && google.accounts) {
+            clearInterval(i);
+            cb();
+          }
+        }, 100);
+      }
+
+      window.onload = () => {
+        const saved = localStorage.getItem("user");
+
+        waitGoogle(() => {
+          // ONE TAP
+          google.accounts.id.initialize({
+            client_id: CLIENT_ID,
+            callback: handleCredential,
+          });
+
+          google.accounts.id.renderButton(document.getElementById("googleBtn"), {
+            theme: "outline",
+            size: "large",
+          });
+
+          google.accounts.id.prompt();
+
+          // POPUP OAUTH
+          oauthClient = google.accounts.oauth2.initCodeClient({
+            client_id: CLIENT_ID,
+            scope: "openid email profile",
+            ux_mode: "popup",
+            callback: handleCode,
+          });
+
+          if (saved) render(JSON.parse(saved));
+        });
+      };
+
+      // ONE TAP
+      async function handleCredential(res) {
+        const response = await fetch(`${API}/auth/google`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ user }),
+          body: JSON.stringify({ credential: res.credential }),
         });
 
-        if (res.ok) {
-          render();
-        } else {
-          alert("Error login");
-        }
+        const user = await response.json();
+        save(user);
       }
 
-      // ==============================
-      // 👀 CHECK AUTH
-      // ==============================
-      async function getUser() {
-        const res = await fetch("https://back.frankgp.com/api/me", {
+      // POPUP
+      function popupLogin() {
+        oauthClient.requestCode();
+      }
+
+      async function handleCode(res) {
+        const response = await fetch(`${API}/auth/google`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ code: res.code }),
+        });
+
+        const user = await response.json();
+        save(user);
+      }
+
+      // LEGACY
+      function legacyLogin() {
+        window.location.href = `${API}/login`;
+      }
+
+      // SESSION
+      async function getMe() {
+        const res = await fetch(`${API}/auth/me`, {
           credentials: "include",
         });
 
-        if (!res.ok) return null;
-
-        const data = await res.json();
-        return data.user;
+        render(await res.json());
       }
 
-      // ==============================
-      // 🚪 LOGOUT
-      // ==============================
+      async function getPrivate() {
+        const res = await fetch(`${API}/api/private`, {
+          credentials: "include",
+        });
+
+        render(await res.json());
+      }
+
+      // LOGOUT
       async function logout() {
-        await fetch("https://back.frankgp.com/api/logout", {
+        await fetch(`${API}/auth/logout`, {
           method: "POST",
           credentials: "include",
         });
 
-        render();
+        localStorage.removeItem("user");
+        location.reload();
       }
 
-      // ==============================
-      // 🎨 RENDER
-      // ==============================
-      async function render() {
-        const app = document.getElementById("app");
-        const user = await getUser();
+      // UI RAW ONLY
+      function save(user) {
+        localStorage.setItem("user", JSON.stringify(user));
+        render(user);
+      }
 
-        if (!user) {
-          app.innerHTML = `
-      <h2>Login</h2>
-      <input id="user" placeholder="usuario">
-      <button onclick="login()">Login</button>
-    `;
-        } else {
-          app.innerHTML = `
-      <h2>Dashboard</h2>
-      <p>Bienvenido ${user}</p>
-      <button onclick="logout()">Logout</button>
-    `;
+      function render(user) {
+        document.getElementById("userCard").classList.remove("hidden");
+        document.getElementById("raw").textContent = JSON.stringify(user, null, 2);
+      }
+
+      const output = document.getElementById("output");
+
+      async function checkSession() {
+        try {
+          const res = await fetch(`${API}/auth/me`, {
+            credentials: "include",
+          });
+
+          const data = await res.json();
+
+          output.textContent = JSON.stringify(data, null, 2);
+        } catch (err) {
+          output.textContent = "Error checking session";
         }
       }
 
-      // ==============================
-      // 🚀 INIT
-      // ==============================
-      render();
+      checkSession();
     </script>
   </body>
 </html>

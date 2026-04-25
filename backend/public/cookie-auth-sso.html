@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <title>App</title>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script>
+      // ==============================
+      // 🔐 LOGIN
+      // ==============================
+      async function login() {
+        const user = document.getElementById("user").value;
+
+        const res = await fetch("https://back.frankgp.com/api/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ user }),
+        });
+
+        if (res.ok) {
+          render();
+        } else {
+          alert("Error login");
+        }
+      }
+
+      // ==============================
+      // 👀 CHECK AUTH
+      // ==============================
+      async function getUser() {
+        const res = await fetch("https://back.frankgp.com/api/me", {
+          credentials: "include",
+        });
+
+        if (!res.ok) return null;
+
+        const data = await res.json();
+        return data.user;
+      }
+
+      // ==============================
+      // 🚪 LOGOUT
+      // ==============================
+      async function logout() {
+        await fetch("https://back.frankgp.com/api/logout", {
+          method: "POST",
+          credentials: "include",
+        });
+
+        render();
+      }
+
+      // ==============================
+      // 🎨 RENDER
+      // ==============================
+      async function render() {
+        const app = document.getElementById("app");
+        const user = await getUser();
+
+        if (!user) {
+          app.innerHTML = `
+      <h2>Login</h2>
+      <input id="user" placeholder="usuario">
+      <button onclick="login()">Login</button>
+    `;
+        } else {
+          app.innerHTML = `
+      <h2>Dashboard</h2>
+      <p>Bienvenido ${user}</p>
+      <button onclick="logout()">Logout</button>
+    `;
+        }
+      }
+
+      // ==============================
+      // 🚀 INIT
+      // ==============================
+      render();
+    </script>
+  </body>
+</html>
